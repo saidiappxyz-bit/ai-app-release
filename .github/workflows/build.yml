@@ -14,13 +14,14 @@ jobs:
 
       - name: Build Android App
         run: |
-          mkdir temp_app
-          cd temp_app
-          flutter create --org com.example --platforms android app_build
-          cd app_build
+          mkdir temp_build
+          cd temp_build
+          flutter create --org com.example --platforms android myapp
+          cd myapp
+          rm -f pubspec.yaml
+          cp ../../pubspec.yaml .
           rm -rf lib
           cp -r ../../lib .
-          cp ../../pubspec.yaml .
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
           flutter pub get
           flutter build apk --release
@@ -29,4 +30,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: temp_app/app_build/build/app/outputs/flutter-apk/app-release.apk
+          path: temp_build/myapp/build/app/outputs/flutter-apk/app-release.apk

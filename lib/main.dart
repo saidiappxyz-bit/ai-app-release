@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'dart:convert';
 
-void main() => runApp(const MyApp());
+void main() => runApp(const AIChatApp());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AIChatApp extends StatelessWidget {
+  const AIChatApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AI Assistant',
+      title: 'هوش مصنوعی فارسی',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF101014),
-        primaryColor: Colors.blueAccent,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
       home: const ChatScreen(),
     );
@@ -33,70 +33,70 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [];
-  final FlutterTts flutterTts = FlutterTts();
+  final FlutterTts _tts = FlutterTts();
   bool _isLoading = false;
-  
-  // کلید API اختصاصی
-  final String apiKey = "YOUR_GEMINI_API_KEY";
+  final String _apiKey = "YOUR_GEMINI_API_KEY";
 
   @override
   void initState() {
     super.initState();
-    flutterTts.setLanguage("fa-IR");
-    flutterTts.setSpeechRate(0.5);
+    _initTts();
+  }
+
+  void _initTts() async {
+    await _tts.setLanguage("fa-IR");
+    await _tts.setSpeechRate(0.5);
+    await _tts.setPitch(1.0);
   }
 
   Future<void> _speak(String text) async {
-    if (text.isNotEmpty) {
-      await flutterTts.speak(text);
-    }
+    String cleanText = text.replaceAll(RegExp(r'[*_#`]'), '');
+    await _tts.speak(cleanText);
   }
 
-  Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
     setState(() {
-      _messages.add({"role": "user", "text": text});
+      _messages.add({"role": "user", "content": text});
       _isLoading = true;
     });
     _controller.clear();
 
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey'
-    );
-
-    final contents = _messages.map((m) => {
-      "role": m["role"] == "user" ? "user" : "model",
-      "parts": [{"text": m["text"]}]
-    }).toList();
-
     try {
       final response = await http.post(
-        url,
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"contents": contents}),
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {"text": "تو یک دستیار هوش مصنوعی هوشمند و مسلط به زبان فارسی و برنامه‌نویسی هستی. همیشه پاسخ‌ها را روان، به زبان فارسی و دقیق ارائه بده.\n\nکاربر: $text"}
+              ]
+            }
+          ]
+        }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final reply = data['candidates'][0]['content']['parts'][0]['text'];
+        final aiResponse = data['candidates'][0]['content']['parts'][0]['text'];
         setState(() {
-          _messages.add({"role": "model", "text": reply});
+          _messages.add({"role": "ai", "content": aiResponse});
         });
-        _speak(reply);
+        _speak(aiResponse);
       } else {
         setState(() {
-          _messages.add({"role": "model", "text": "خطا در برقراری ارتباط با API"});
+          _messages.add({"role": "ai", "content": "خطا در برقراری ارتباط. لطفا کلید API را بررسی کنید."});
         });
       }
     } catch (e) {
       setState(() {
-        _messages.add({"role": "model", "text": "خطای شبکه: $e"});
+        _messages.add({"role": "ai", "content": "خطایی رخ داد: $e"});
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -104,8 +104,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('دستیار هوشمند (صوتی + کدنویسی)'),
-        backgroundColor: const Color(0xFF1E1E24),
+        title: const Text('دستیار هوشمند فارسی (با ویس)'),
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -113,24 +113,21 @@ class _ChatScreenState extends State<ChatScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: _messages.length,
-              itemBuilder: (context, index) {
+              itemBuilder: (context, index) {override
                 final msg = _messages[index];
                 final isUser = msg["role"] == "user";
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isUser ? Colors.blueAccent : const Color(0xFF282830),
+                      color: isUser ? Colors.deepPurple[100] : Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: MarkdownBody(
-                      data: msg["text"] ?? "",
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(color: Colors.white, fontSize: 15),
-                        code: const TextStyle(backgroundColor: Colors.black45, color: Colors.greenAccent),
-                      ),
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: MarkdownBody(data: msg["content"] ?? ""),
                     ),
                   ),
                 );
@@ -138,22 +135,21 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (_isLoading) const LinearProgressIndicator(),
-          Container(
-            padding: const EdgeInsets.all(8),
-            color: const Color(0xFF1E1E24),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.blueAccent),
-                  onPressed: () => _sendMessage(_controller.text),
+                  icon: const Icon(Icons.send, color: Colors.deepPurple),
+                  onPressed: _sendMessage,
                 ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
                     textDirection: TextDirection.rtl,
                     decoration: const InputDecoration(
-                      hintText: 'دستور یا سوال خود را بنویسید...',
-                      border: InputBorder.none,
+                      hintText: 'پیام خود را بنویسید...',
+                      border: OutlineInputBorder(),
                     ),
                   ),
                 ),

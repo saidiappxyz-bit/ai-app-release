@@ -1,0 +1,21 @@
+name: ai_assistant_app
+description: "Full Unrestricted AI Assistant with Voice and Code Output"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  flutter_tts: ^3.8.3
+  flutter_markdown: ^0.6.18
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

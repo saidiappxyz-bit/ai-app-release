@@ -16,7 +16,14 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms android --org com.mohammad.gemini
+          
+          # ارتقای نسخه Android SDK به 34
+          find android/ -name "build.gradle*" -exec sed -i 's/compileSdk = .*/compileSdk = 34/g' {} +
+          find android/ -name "build.gradle*" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' {} +
+          
+          # افزودن مجوز اینترنت
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          
           flutter pub get
           flutter build apk --release
 

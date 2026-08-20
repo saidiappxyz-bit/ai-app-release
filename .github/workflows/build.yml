@@ -18,31 +18,18 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Recreate Android & Build
+      - name: Build and Debug
         run: |
-          rm -rf android
-          flutter create . --platforms android --org com.mohammad.gemini
-          
-          python3 -c "
-import os, re
-for root, dirs, files in os.walk('android'):
-    for file in files:
-        if 'build.gradle' in file:
-            p = os.path.join(root, file)
-            with open(p, 'r') as f:
-                c = f.read()
-            c = re.sub(r'compileSdk\s*=\s*.*', 'compileSdk = 34', c)
-            c = re.sub(r'compileSdkVersion\s+.*', 'compileSdkVersion 34', c)
-            with open(p, 'w') as f:
-                f.write(c)
-"
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
-          
           flutter pub get
+          # استفاده از فلگ‌های اختصاصی برای رفع ارورهای بیلد
           flutter build apk --release --no-tree-shake-icons
-
+          
+          # این دستور باعث میشه فایل‌های تولید شده رو در لاگ ببینیم
+          echo "Listing build directory:"
+          find build -name "*.apk"
+        
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk

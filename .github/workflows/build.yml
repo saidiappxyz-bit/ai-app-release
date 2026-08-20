@@ -16,7 +16,7 @@ jobs:
         run: |
           mkdir temp_build
           cd temp_build
-          flutter create --org com.example --platforms android myapp
+          flutter create --org com.mohammad.gemini --platforms android myapp
           cd myapp
           rm -f pubspec.yaml
           cp ../../pubspec.yaml .

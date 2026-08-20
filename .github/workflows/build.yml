@@ -18,18 +18,32 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Build and Debug
+      - name: Force Clean Build
         run: |
-          flutter pub get
-          # استفاده از فلگ‌های اختصاصی برای رفع ارورهای بیلد
-          flutter build apk --release --no-tree-shake-icons
+          # ۱. حذف کامل پوشه اندروید و کش
+          rm -rf android
+          rm -rf build
           
-          # این دستور باعث میشه فایل‌های تولید شده رو در لاگ ببینیم
-          echo "Listing build directory:"
-          find build -name "*.apk"
-        
+          # ۲. ساخت مجدد ساختار اندروید
+          flutter create . --platforms android
+          
+          # ۳. تزریق تنظیمات حیاتی برای رفع خطای v1 embedding
+          echo "android.useAndroidX=true" > android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          
+          # ۴. تنظیم دقیق compileSdk به ۳۴ در تمام فایل‌های گریدل
+          find android/ -name "build.gradle" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' {} +
+          find android/ -name "build.gradle" -exec sed -i 's/compileSdk = .*/compileSdk = 34/g' {} +
+          
+          # ۵. افزودن دسترسی اینترنت
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          
+          # ۶. بیلد نهایی
+          flutter pub get
+          flutter build apk --release --no-tree-shake-icons
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/*.apk
+          path: build/app/outputs/flutter-apk/app-release.apk

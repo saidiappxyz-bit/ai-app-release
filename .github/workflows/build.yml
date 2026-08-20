@@ -1,33 +1,19 @@
 name: Build APK
-
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-
-      - name: Build Android App
+      - name: Build
         run: |
-          mkdir temp_build
-          cd temp_build
-          flutter create --org com.mohammad.gemini --platforms android myapp
-          cd myapp
-          rm -f pubspec.yaml
-          cp ../../pubspec.yaml .
-          rm -rf lib
-          cp -r ../../lib .
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
           flutter pub get
           flutter build apk --release
-
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: temp_build/myapp/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk

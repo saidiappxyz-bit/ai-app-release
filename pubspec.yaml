@@ -1,5 +1,5 @@
 name: gemini_mohammad
-description: Gemini Mohammad AI Assistant with Persian Voice
+description: Gemini Mohammad Universal AI
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -12,6 +12,7 @@ dependencies:
   http: ^1.2.0
   flutter_tts: ^3.8.5
   flutter_markdown: ^0.6.23
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:
